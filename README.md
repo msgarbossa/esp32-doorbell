@@ -26,7 +26,7 @@ As my first major rewrite of my doorbell, I originally changed everything to att
 
 ## Assembly
 
-The inside is a bit ugly.  I gutted the box with a dremel tool and a cutoff wheel.  I removed the old transformer from the wall and replaced it with a standard receptable.  The small USB adapter has the port on the side, allowing the existing doorbell cover to fit over all of the parts.  I was considering 3D printing a 2-gang electrical box cover to completely replace the old doorbell case, but I'd have some paint to touch up and I just started learning FreeCAD and wanted to start small.
+The inside is a bit ugly.  I gutted the box with a dremel tool and a cutoff wheel.  I removed the old transformer from the wall and replaced it with a standard receptacle.  The small USB adapter has the port on the side, allowing the existing doorbell cover to fit over all of the parts.  I was considering 3D printing a 2-gang electrical box cover to completely replace the old doorbell case, but I'd have some paint to touch up and I just started learning FreeCAD and wanted to start small.
 
 ![project photo](img/esp32-doorbell-internal.jpg)
 
