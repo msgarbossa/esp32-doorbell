@@ -49,13 +49,13 @@ When developing this, I swapped the buzzer out for an LED with the same code.
 ![Node-RED flow](/node-red/node-red-flow.png)
 [JSON for above flow](node-red/flow.json)
 
-The beginning of the flow starts out with Node-RED listening on the MQTT topic for messages.  The messages get converted from JSON to payload objects.  Whenever a MQTT message is received, a timestamp is recorded in the func-doorbell-events node.
+The beginning of the flow starts out with Node-RED listening on the MQTT topic for messages.  The messages get converted from JSON to payload objects.  Whenever an MQTT message is received, a timestamp is recorded in the func-doorbell-events node.
 
 The "inject healthcheck" node periodically sends a message that is compared to the last MQTT timestamp.  If no MQTT messages have been recieved for a while, the flow is marked offline and a new message is returned to zero out the Prometheus metrics at the end of the flow.
 
 The "inject timeout" handles resetting the motion and doorbell Prometheus metrics back to zero after an alert, but ensures the value stays at "1" long enough for Prometheus to scrape the exporter.
 
-The prometheus data shown below at \<node_red_url\>:1880/metrics.
+The Prometheus data shown below is at \<node_red_url\>:1880/metrics.
 
 ```
 # HELP doorbell_signal doorbell signal
