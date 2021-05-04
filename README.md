@@ -2,13 +2,12 @@
 
 ## Description
 
-DIY smart doorbell.
-
-My doorbell chime stopped working.  I gutted the box with a dremel tool and a cutoff wheel.  I removed the transformer from the wall and replaced it with a standard receptable.  The small USB adapter has the port on the side, allowing the existing doorbell cover to fit over all of the parts.
+My doorbell chime stopped working so I made my own smart doorbell.
 
 ![project photo](img/esp32-doorbell-exterior.jpg)
 
 - Drop-in replacement for existing doorbell
+- Uses original low-tech button
 - NTP is used to set time and allow for Do-not-Disturb hours
 - In addition to playing a sound when the doorbell button is pressed, an MQTT message is published
 - A PIR motion sensor also sends MQTT messages
@@ -27,7 +26,7 @@ As my first major rewrite of my doorbell, I originally changed everything to att
 
 ## Assembly
 
-The inside is a bit ugly.  I was considering 3D printing a 2-gang electrical box cover to hold everything, but I'd have some paint to touch up and I just started learning FreeCAD and wanted to start small.
+The inside is a bit ugly.  I gutted the box with a dremel tool and a cutoff wheel.  I removed the old transformer from the wall and replaced it with a standard receptable.  The small USB adapter has the port on the side, allowing the existing doorbell cover to fit over all of the parts.  I was considering 3D printing a 2-gang electrical box cover to completely replace the old doorbell case, but I'd have some paint to touch up and I just started learning FreeCAD and wanted to start small.
 
 ![project photo](img/esp32-doorbell-internal.jpg)
 
