@@ -1,0 +1,291 @@
+[
+    {
+        "id": "3e894dae.df43f2",
+        "type": "mqtt in",
+        "z": "2207dacb.44a88e",
+        "name": "mqtt-doorbell",
+        "topic": "home/doorbell/metrics",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "ee701ac3.03ed3",
+        "x": 90,
+        "y": 2900,
+        "wires": [
+            [
+                "314e7efb.e18bd2"
+            ]
+        ]
+    },
+    {
+        "id": "9f90a309.502e5",
+        "type": "debug",
+        "z": "2207dacb.44a88e",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 2820,
+        "wires": []
+    },
+    {
+        "id": "675ef76a.b9774",
+        "type": "inject",
+        "z": "2207dacb.44a88e",
+        "name": "inject-healthcheck",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "300",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "600",
+        "topic": "",
+        "payload": "healthcheck",
+        "payloadType": "str",
+        "x": 250,
+        "y": 2960,
+        "wires": [
+            [
+                "4afb1a9f.98d74c"
+            ]
+        ]
+    },
+    {
+        "id": "314e7efb.e18bd2",
+        "type": "json",
+        "z": "2207dacb.44a88e",
+        "name": "json-doorbell",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 270,
+        "y": 2900,
+        "wires": [
+            [
+                "4afb1a9f.98d74c"
+            ]
+        ]
+    },
+    {
+        "id": "4afb1a9f.98d74c",
+        "type": "function",
+        "z": "2207dacb.44a88e",
+        "name": "func-doorbell-events",
+        "func": "d = new Date();\ncurrentMilli = d.getTime();\nif (msg.payload == \"healthcheck\") {\n    lastMilli = context.get(\"lastUpdate\");\n    if ((currentMilli - lastMilli) > 600000) {\n        if (context.get(\"status\") == \"offline\") {\n            return null;\n        } else {\n            context.set(\"status\", \"offline\");\n            node.status({fill:\"red\",shape:\"ring\",text:\"disconnected\"});\n            var newPayload = {\n                \"s\": 0,\n                \"d\": 0,\n                \"m\": 0,\n                \"eventType\": \"offline\"\n            };\n            var newMsg = { payload: newPayload };\n            return newMsg;\n        }\n    } else {\n        context.set(\"status\", \"online\");\n    }\n} else {\n    context.set(\"lastUpdate\", currentMilli);\n    node.status({fill:\"green\",shape:\"dot\",text:\"connected\"});\n    return msg;\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is deployed.\nd = new Date();\nif (context.get(\"lastUpdate\") == undefined) {\n    context.set(\"lastUpdate\", d.getTime())\n}\ncontext.set(\"key_cache\", []);\n// node.status({});   // clear the status",
+        "finalize": "",
+        "x": 500,
+        "y": 2900,
+        "wires": [
+            [
+                "9f90a309.502e5",
+                "2072f0fa.4c8c58",
+                "f2dd4714.e6289",
+                "de130c3d.570d48"
+            ]
+        ]
+    },
+    {
+        "id": "2072f0fa.4c8c58",
+        "type": "function",
+        "z": "2207dacb.44a88e",
+        "name": "func-doorbell-signal",
+        "func": "var metric = {\n    \"op\": \"set\",\n    \"val\": msg.payload.s\n}\nvar newMsg = { payload: metric };\nreturn newMsg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 750,
+        "y": 2880,
+        "wires": [
+            [
+                "38bae8f.5f3c218"
+            ]
+        ]
+    },
+    {
+        "id": "38bae8f.5f3c218",
+        "type": "prometheus-exporter",
+        "z": "2207dacb.44a88e",
+        "name": "",
+        "metric": "4c563411.a87044",
+        "x": 1010,
+        "y": 2840,
+        "wires": []
+    },
+    {
+        "id": "f2dd4714.e6289",
+        "type": "function",
+        "z": "2207dacb.44a88e",
+        "name": "func-doorbell-ring",
+        "func": "d = new Date();\ncurrentMilli = d.getTime();\ntimeoutMilli = 65000;\nif (msg.payload.d == 1) {\n    context.set(\"doorbellRingMilli\", currentMilli);\n}\nvar msg1 = {\n    'payload': {\n        \"op\": \"set\"\n    }\n}; // prometheus metric\nvar msg2 = {}; // slack\n\nif (msg.payload == \"reaper\") {\n    doorbellRingMilli = context.get(\"doorbellRingMilli\");\n    if ((currentMilli - doorbellRingMilli) > timeoutMilli) {\n        msg1['payload']['val'] = 0;\n        msg1['payload']['eventType'] = \"reaper\";\n        return [msg1, null];\n    }\n    return [null, null];\n} else {\n    // not reaper, must be MQTT message\n    msg1['payload']['val'] = msg.payload.d;\n    if (msg.payload.d == 1) {\n        msg2 = {\n            payload: \"doorbell (node-red)\",\n            topic: \"#home\"\n        }\n    } else {\n        msg2 = null;\n    }\n    return [msg1, msg2];\n}\n",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is deployed.\nvar d = new Date();\ninitialMilli = d.getTime() - 65000;\ncontext.set(\"doorbellRingMilli\", initialMilli);",
+        "finalize": "",
+        "x": 750,
+        "y": 3000,
+        "wires": [
+            [
+                "b9c9df93.cd803"
+            ],
+            [
+                "614ff8.d7211808",
+                "bf7b729.f20a29"
+            ]
+        ]
+    },
+    {
+        "id": "b9c9df93.cd803",
+        "type": "prometheus-exporter",
+        "z": "2207dacb.44a88e",
+        "name": "",
+        "metric": "d82ed844.0431",
+        "x": 1000,
+        "y": 2980,
+        "wires": []
+    },
+    {
+        "id": "873431.b34d3bd",
+        "type": "prometheus-exporter",
+        "z": "2207dacb.44a88e",
+        "name": "",
+        "metric": "bfb5e157.2dc958",
+        "x": 1010,
+        "y": 2920,
+        "wires": []
+    },
+    {
+        "id": "98e1cb2f.888698",
+        "type": "inject",
+        "z": "2207dacb.44a88e",
+        "name": "inject-timeout",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "1200",
+        "topic": "",
+        "payload": "reaper",
+        "payloadType": "str",
+        "x": 500,
+        "y": 3000,
+        "wires": [
+            [
+                "f2dd4714.e6289",
+                "de130c3d.570d48"
+            ]
+        ]
+    },
+    {
+        "id": "de130c3d.570d48",
+        "type": "function",
+        "z": "2207dacb.44a88e",
+        "name": "func-doorbell-motion",
+        "func": "d = new Date();\ncurrentMilli = d.getTime();\ntimeoutMilli = 65000;\nif (msg.payload.m == 1) {\n    context.set(\"doorbellMotionMilli\", currentMilli);\n}\nvar msg1 = {\n    'payload': {\n        \"op\": \"set\"\n    }\n}; // prometheus metric\n\nif (msg.payload == \"reaper\") {\n    doorbellMotionMilli = context.get(\"doorbellMotionMilli\");\n    if ((currentMilli - doorbellMotionMilli) > timeoutMilli) {\n        msg1['payload']['val'] = 0;\n        msg1['payload']['eventType'] = \"reaper\";\n        return msg1;\n    }\n    return null;\n} else {\n    // not reaper, must be MQTT message\n    msg1['payload']['val'] = msg.payload.m;\n    return msg1;\n}\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is deployed.\nvar d = new Date();\ninitialMilli = d.getTime() - 65000;\ncontext.set(\"doorbellMotionMilli\", initialMilli);",
+        "finalize": "",
+        "x": 760,
+        "y": 2940,
+        "wires": [
+            [
+                "873431.b34d3bd"
+            ]
+        ]
+    },
+    {
+        "id": "614ff8.d7211808",
+        "type": "debug",
+        "z": "2207dacb.44a88e",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 970,
+        "y": 3080,
+        "wires": []
+    },
+    {
+        "id": "bf7b729.f20a29",
+        "type": "slack-web-out",
+        "z": "2207dacb.44a88e",
+        "client": "b06cff83.04ca9",
+        "name": "slack",
+        "x": 970,
+        "y": 3026,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ee701ac3.03ed3",
+        "type": "mqtt-broker",
+        "name": "mqtt-broker",
+        "broker": "10.10.1.100",
+        "port": "1883",
+        "clientid": "nodered",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "30",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "4c563411.a87044",
+        "type": "prometheus-metric-config",
+        "name": "doorbell_signal",
+        "help": "doorbell signal",
+        "labels": "",
+        "mtype": "gauge"
+    },
+    {
+        "id": "d82ed844.0431",
+        "type": "prometheus-metric-config",
+        "name": "doorbell_ring",
+        "help": "doorbell ring",
+        "labels": "",
+        "mtype": "gauge"
+    },
+    {
+        "id": "bfb5e157.2dc958",
+        "type": "prometheus-metric-config",
+        "name": "doorbell_motion",
+        "help": "doorbell motion",
+        "labels": "",
+        "mtype": "gauge"
+    },
+    {
+        "id": "b06cff83.04ca9",
+        "type": "slack-config",
+        "name": "slack-home-api"
+    }
+]
+
